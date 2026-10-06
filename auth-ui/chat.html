@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/jpeg" href="logo.jpg">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus - Chat</title>
+    <link rel="stylesheet" href="shared.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .chat-layout { display: flex; height: calc(100vh - 104px); background: var(--surface); border-radius: 8px; overflow: hidden; box-shadow: var(--shadow); }
+        .chat-sidebar { width: 300px; border-right: 1px solid var(--border); padding: 10px 0; overflow-y: auto;}
+        .chat-sidebar h2 { padding: 10px 20px; border-bottom: 1px solid var(--border); }
+        .chat-user { display: flex; align-items: center; gap: 10px; padding: 15px 20px; cursor: pointer; transition: 0.2s; }
+        .chat-user:hover, .chat-user.active { background: var(--hover-bg); border-left: 3px solid var(--primary); }
+        .chat-user img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover;}
+        .chat-user-info h4 { font-size: 0.95rem; }
+        .chat-user-info p { font-size: 0.85rem; color: var(--text-secondary); }
+        .chat-window { flex: 1; display: flex; flex-direction: column; }
+        .chat-header { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+        .chat-header img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover;}
+        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; background: var(--bg-color); display: flex; flex-direction: column; gap: 10px; }
+        .message { max-width: 70%; padding: 10px 15px; border-radius: 18px; font-size: 0.95rem; }
+        .message.received { background: var(--surface); align-self: flex-start; border: 1px solid var(--border);}
+        .message.sent { background: var(--primary); color: white; align-self: flex-end; }
+        .chat-input-area { padding: 15px; background: var(--surface); display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border); }
+        .chat-input-area input { flex: 1; background: var(--bg-color); border: 1px solid var(--border); color: white; padding: 12px 20px; border-radius: 20px; outline: none; }
+        .chat-input-area input:focus { border-color: var(--primary); }
+        .chat-input-area button { background: transparent; border: none; font-size: 1.5rem; color: var(--primary); cursor: pointer; }
+        
+        .no-chat-selected { flex: 1; display: flex; justify-content: center; align-items: center; flex-direction: column; color: var(--text-secondary); background: var(--bg-color);}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-left">
+            <a href="dashboard.html" class="logo"><img src="logo.jpg" alt="Nexus" style="height:35px; width:35px; vertical-align:middle; border-radius:8px; margin-right:10px;">nexus<span style="color:var(--cyan)">.</span></a>
+        </div>
+        <div class="search-box">
+            <input type="text" placeholder="Search accounts and videos">
+            <i class="fa-solid fa-search" style="color: var(--text-secondary); cursor: pointer;"></i>
+        </div>
+        <div class="nav-right">
+            <a href="upload.html" class="btn-upload"><i class="fa-solid fa-plus"></i> Upload</a>
+            <a href="chat.html" class="nav-icon active" title="Chat"><i class="fa-regular fa-comment-dots"></i></a>
+            <a href="inbox.html" class="nav-icon" title="Inbox"><i class="fa-regular fa-paper-plane"></i></a>
+            <a href="profile.html" class="profile-nav">
+                <img src="" class="my-profile-pic" alt="Profile">
+            </a>
+            <a href="#" class="nav-icon" title="Logout" onclick="DB.logout()" style="color:var(--text-secondary); margin-left:10px;"><i class="fa-solid fa-arrow-right-from-bracket"></i></a>
+        </div>
+    </nav>
+
+    <div class="main-container" style="padding: 24px; justify-content: center; max-width: 1200px; margin: 60px auto 0;">
+        <div class="chat-layout" style="width: 100%;">
+            <div class="chat-sidebar">
+                <h2>Messages</h2>
+                <div class="chat-list" id="chat-friends-list">
+                    <!-- JS Fills this -->
+                </div>
+            </div>
+            
+            <div class="no-chat-selected" id="no-chat-selected">
+                <i class="fa-regular fa-paper-plane" style="font-size: 4rem; margin-bottom: 20px;"></i>
+                <h3>Your Messages</h3>
+                <p>Select a friend to start chatting.</p>
+            </div>
+
+            <div class="chat-window" id="chat-window" style="display:none;">
+                <div class="chat-header">
+                    <img src="" id="chat-active-img">
+                    <h4 id="chat-active-name">User Name</h4>
+                </div>
+                <div class="chat-messages" id="chat-messages">
+                    <!-- Messages go here -->
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" placeholder="Type a message..." id="chat-input-msg">
+                    <button id="send-msg-btn"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="db.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

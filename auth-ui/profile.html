@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/jpeg" href="logo.jpg">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus - Profile</title>
+    <link rel="stylesheet" href="shared.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Edit Profile Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 3000; }
+        .modal-overlay.active { display: flex; }
+        .modal-card { background: var(--surface); width: 400px; border-radius: 12px; padding: 20px; border: 1px solid var(--border); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header i { cursor: pointer; font-size: 1.2rem; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: var(--text-secondary); font-size: 0.9rem; }
+        .form-group input, .form-group textarea { width: 100%; background: var(--bg-color); color: white; border: 1px solid var(--border); padding: 10px; border-radius: 6px; outline: none; }
+        .form-group input:focus, .form-group textarea:focus { border-color: var(--primary); }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-left">
+            <a href="dashboard.html" class="logo"><img src="logo.jpg" alt="Nexus" style="height:35px; width:35px; vertical-align:middle; border-radius:8px; margin-right:10px;">nexus<span style="color:var(--cyan)">.</span></a>
+        </div>
+        <div class="search-box">
+            <input type="text" placeholder="Search accounts and videos">
+            <i class="fa-solid fa-search" style="color: var(--text-secondary); cursor: pointer;"></i>
+        </div>
+        <div class="nav-right">
+            <a href="upload.html" class="btn-upload"><i class="fa-solid fa-plus"></i> Upload</a>
+            <a href="chat.html" class="nav-icon" title="Chat"><i class="fa-regular fa-comment-dots"></i></a>
+            <a href="inbox.html" class="nav-icon" title="Inbox"><i class="fa-regular fa-paper-plane"></i></a>
+            <a href="profile.html" class="profile-nav">
+                <img src="" class="my-profile-pic" alt="Profile">
+            </a>
+            <a href="#" class="nav-icon" title="Logout" onclick="DB.logout()" style="color:var(--text-secondary); margin-left:10px;"><i class="fa-solid fa-arrow-right-from-bracket"></i></a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <aside class="sidebar">
+            <div class="sidebar-nav">
+                <a href="dashboard.html" class="sidebar-item"><i class="fa-solid fa-house"></i> For You</a>
+                <a href="dashboard.html" class="sidebar-item"><i class="fa-solid fa-user-group"></i> Following</a>
+                <a href="profile.html" class="sidebar-item active"><i class="fa-regular fa-user"></i> Profile</a>
+                <a href="upload.html" class="sidebar-item upload-bottom-nav" style="display:none;"><i class="fa-solid fa-plus" style="background:var(--primary); color:white; border-radius:10px; padding:5px 10px;"></i></a>
+            </div>
+            <div class="following-list">
+                <h4>Following accounts</h4>
+                <div id="following-list">
+                    <!-- JS fills this -->
+                </div>
+            </div>
+        </aside>
+
+        <main class="content-area" style="display:block; overflow-y:auto; scroll-snap-type:none;">
+            <div class="profile-container">
+                <div class="profile-header">
+                    <img src="" id="profile-img" alt="Profile">
+                    <div class="profile-info">
+                        <h1 id="profile-username">@username</h1>
+                        <h3 id="profile-fullname" style="margin-bottom: 5px; font-weight: 500;">Full Name</h3>
+                        <p id="profile-bio" style="color:var(--text-secondary); margin-bottom: 20px; font-size: 0.95rem; max-width: 400px;"></p>
+                        
+                        <div class="profile-stats">
+                            <div><strong id="count-following">0</strong> Following</div>
+                            <div><strong id="count-followers">0</strong> Followers</div>
+                            <div><strong id="count-likes">0</strong> Likes</div>
+                        </div>
+
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn-primary" id="profile-action-btn">Follow</button>
+                            <button class="btn-primary" id="profile-message-btn" style="display:none; background: var(--surface); border: 1px solid var(--border);">Message</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="border-bottom: 1px solid var(--border); margin-bottom: 20px; display:flex; gap: 40px;">
+                    <div style="padding-bottom:10px; border-bottom: 2px solid var(--text-main); font-weight: 600; cursor:pointer;">Videos</div>
+                    <div style="padding-bottom:10px; color: var(--text-secondary); cursor:pointer;"><i class="fa-solid fa-lock"></i> Liked</div>
+                </div>
+
+                <div class="video-grid" id="profile-video-grid">
+                    <!-- Videos injected here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div class="modal-overlay" id="edit-profile-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Edit Profile</h3>
+                <i class="fa-solid fa-xmark" id="close-edit-modal"></i>
+            </div>
+            <form id="edit-profile-form">
+                <div class="form-group">
+                    <label>Profile Picture</label>
+                    <input type="file" id="edit-pic" accept="image/*">
+                </div>
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="edit-name" required>
+                </div>
+                <div class="form-group">
+                    <label>Bio</label>
+                    <textarea id="edit-bio" rows="3" placeholder="Tell us about yourself..."></textarea>
+                </div>
+                <button type="submit" class="btn-primary" style="width:100%;">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="db.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

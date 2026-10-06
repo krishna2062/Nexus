@@ -1,0 +1,619 @@
+document.addEventListener('DOMContentLoaded', async () => {
+    const currentUser = await DB.getCurrentUser();
+    if(!currentUser) {
+        window.location.href = 'index.html';
+        return;
+    }
+
+    // Pre-fetch all users for performance
+    window.allUsersCache = await DB.getUsers();
+
+    // Populate Sidebar Profile & Following List
+    document.querySelectorAll('.my-profile-pic').forEach(el => el.src = currentUser.profilePic);
+    
+    const followingListEl = document.getElementById('following-list');
+    if(followingListEl) {
+        followingListEl.innerHTML = '';
+        if(currentUser.following && currentUser.following.length > 0) {
+            for (const id of currentUser.following) {
+                const u = window.allUsersCache.find(user => user.id === id);
+                if(u) {
+                    followingListEl.innerHTML += `
+                    <div class="user-item" onclick="window.location.href='profile.html?id=${u.id}'">
+                        <img src="${u.profilePic}">
+                        <div class="user-item-info">
+                            <strong>${u.fullname}</strong>
+                        </div>
+                    </div>`;
+                }
+            }
+        } else {
+            followingListEl.innerHTML = '<p style="color:var(--text-secondary); padding-left:12px; font-size:0.85rem;">You are not following anyone yet.</p>';
+        }
+    }
+
+    // Active Sidebar Link
+    document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+    const currentPath = window.location.pathname.split('/').pop() || 'dashboard.html';
+    
+    if (currentPath === 'dashboard.html') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const feedType = urlParams.get('feed') || 'foryou';
+        if (feedType === 'following') {
+            document.getElementById('nav-following')?.classList.add('active');
+        } else {
+            document.getElementById('nav-foryou')?.classList.add('active');
+        }
+    } else {
+        document.querySelectorAll('.sidebar-item').forEach(el => {
+            if(el.getAttribute('href') === currentPath) el.classList.add('active');
+        });
+    }
+
+    // Render Videos on Dashboard
+    const feedContainer = document.getElementById('video-feed');
+    if(feedContainer) {
+        feedContainer.innerHTML = '';
+        let videos = (await DB.getVideos()).reverse();
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const feedType = urlParams.get('feed') || 'foryou';
+        
+        if (feedType === 'following') {
+            videos = videos.filter(v => currentUser.following && currentUser.following.includes(v.userId));
+        }
+
+        if(videos.length === 0) {
+            feedContainer.innerHTML = '<div style="text-align:center; padding:50px;">No videos to show here.</div>';
+        }
+
+        // Fetch all users once for performance
+        const allUsers = window.allUsersCache;
+
+        for (const vid of videos) {
+            const user = allUsers.find(u => u.id === vid.userId);
+            if(!user) continue;
+            const isLiked = vid.likes.includes(currentUser.id);
+            const isFollowing = currentUser.following && currentUser.following.includes(user.id);
+            const hasRequested = user.pendingFollowers && user.pendingFollowers.includes(currentUser.id);
+            
+            let followBtnHtml = '';
+            if(user.id !== currentUser.id && !isFollowing) {
+                if(hasRequested) {
+                    followBtnHtml = `<button class="follow-btn-small" style="background:#444; width:auto; padding:0 5px; border-radius:10px;">Requested</button>`;
+                } else {
+                    followBtnHtml = `<button class="follow-btn-small" onclick="followUserFromFeed('${user.id}')"><i class="fa-solid fa-plus"></i></button>`;
+                }
+            }
+
+            let captionHtml = vid.caption;
+            if (vid.mentioned_user_id) {
+                const mentionedUser = allUsers.find(u => u.id === vid.mentioned_user_id);
+                if (mentionedUser) {
+                    captionHtml += ` <span style="color:var(--primary); font-weight:bold; cursor:pointer;" onclick="window.location.href='profile.html?id=${mentionedUser.id}'">@${mentionedUser.fullname.replace(/\s+/g, '').toLowerCase()}</span>`;
+                }
+            }
+
+            const videoHtml = `
+            <div class="video-container" data-id="${vid.id}">
+                <video src="${vid.videoUrl}" class="video-player" loop></video>
+                <div class="video-info">
+                    <h3 onclick="window.location.href='profile.html?id=${user.id}'">@${user.fullname.replace(/\s+/g, '').toLowerCase()}</h3>
+                    <p>${captionHtml}</p>
+                    <div class="music-ticker"><i class="fa-solid fa-music"></i> Original Sound - ${user.fullname}</div>
+                </div>
+                <div class="action-sidebar">
+                    <div class="profile-action">
+                        <img src="${user.profilePic}" onclick="window.location.href='profile.html?id=${user.id}'">
+                        ${followBtnHtml}
+                    </div>
+                    <div class="action-btn like-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${vid.id}', this)">
+                        <div class="icon-circle"><i class="fa-solid fa-heart"></i></div>
+                        <span class="likes-count">${vid.likes.length}</span>
+                    </div>
+                    <div class="action-btn comment-btn" onclick="openComments('${vid.id}')">
+                        <div class="icon-circle"><i class="fa-solid fa-comment-dots"></i></div>
+                        <span class="comments-count">${vid.comments.length}</span>
+                    </div>
+                    <div class="action-btn share-btn" onclick="alert('Link copied!')">
+                        <div class="icon-circle"><i class="fa-solid fa-share"></i></div>
+                        <span>Share</span>
+                    </div>
+                </div>
+            </div>`;
+            feedContainer.insertAdjacentHTML('beforeend', videoHtml);
+        }
+
+        // Intersection Observer for autoplay
+        const videosElements = document.querySelectorAll('.video-player');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if(entry.isIntersecting) {
+                    entry.target.play().catch(e => console.log('Autoplay prevented'));
+                } else {
+                    entry.target.pause();
+                }
+            });
+        }, { threshold: 0.6 });
+        
+        videosElements.forEach(v => {
+            observer.observe(v);
+            v.addEventListener('click', () => {
+                if(v.paused) v.play();
+                else v.pause();
+            });
+        });
+    }
+
+    // Profile Page Logic
+    if(window.location.pathname.includes('profile.html')) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const viewId = urlParams.get('id') || currentUser.id;
+        const viewUser = await DB.getUser(viewId);
+        
+        if(viewUser) {
+            document.getElementById('profile-img').src = viewUser.profilePic;
+            document.getElementById('profile-username').textContent = '@' + viewUser.fullname.replace(/\s+/g, '').toLowerCase();
+            document.getElementById('profile-fullname').textContent = viewUser.fullname;
+            document.getElementById('profile-bio').textContent = viewUser.bio || 'No bio yet.';
+            
+            document.getElementById('count-following').textContent = (viewUser.following || []).length;
+            document.getElementById('count-followers').textContent = (viewUser.followers || []).length;
+            
+            const allVideos = await DB.getVideos();
+            const userVideos = allVideos.filter(v => v.userId === viewId);
+            const totalLikes = userVideos.reduce((sum, v) => sum + v.likes.length, 0);
+            document.getElementById('count-likes').textContent = totalLikes;
+
+            const actionBtn = document.getElementById('profile-action-btn');
+            const msgBtn = document.getElementById('profile-message-btn');
+
+            if(viewId === currentUser.id) {
+                actionBtn.textContent = 'Edit profile';
+                actionBtn.style.background = 'var(--surface)';
+                actionBtn.style.border = '1px solid var(--border)';
+                actionBtn.addEventListener('click', () => {
+                    document.getElementById('edit-profile-modal').classList.add('active');
+                    document.getElementById('edit-name').value = currentUser.fullname;
+                    document.getElementById('edit-bio').value = currentUser.bio || '';
+                });
+            } else {
+                const isFollowing = currentUser.following && currentUser.following.includes(viewId);
+                const hasRequested = viewUser.pendingFollowers && viewUser.pendingFollowers.includes(currentUser.id);
+                
+                if(isFollowing) {
+                    actionBtn.textContent = 'Following';
+                    actionBtn.style.background = 'var(--surface)';
+                    actionBtn.style.border = '1px solid var(--border)';
+                    msgBtn.style.display = 'block';
+                    msgBtn.onclick = () => window.location.href = `chat.html?user=${viewId}`;
+                    
+                    actionBtn.onclick = async () => {
+                        await DB.unfollow(currentUser.id, viewId);
+                        window.location.reload();
+                    };
+                } else if(hasRequested) {
+                    actionBtn.textContent = 'Requested';
+                    actionBtn.style.background = 'var(--surface)';
+                    actionBtn.style.border = '1px solid var(--border)';
+                } else {
+                    actionBtn.textContent = 'Follow';
+                    actionBtn.addEventListener('click', async () => {
+                        await DB.requestFollow(currentUser.id, viewId);
+                        window.location.reload();
+                    });
+                }
+            }
+
+            // Render Videos
+            const grid = document.getElementById('profile-video-grid');
+            if(userVideos.length === 0) {
+                grid.innerHTML = '<p style="grid-column: 1 / -1; text-align:center; color:var(--text-secondary); padding:40px;">No videos uploaded yet.</p>';
+            } else {
+                userVideos.forEach(v => {
+                    let deleteBtn = '';
+                    if (viewId === currentUser.id) {
+                        deleteBtn = `<div onclick="deleteVideo('${v.id}')" style="position:absolute; top:5px; right:5px; background:rgba(255,0,0,0.7); padding:5px 8px; border-radius:5px; font-size:0.8rem; z-index:10; cursor:pointer;"><i class="fa-solid fa-trash"></i></div>`;
+                    }
+                    grid.innerHTML += `
+                    <div class="grid-item">
+                        <video src="${v.videoUrl}" onclick="window.location.href='dashboard.html'"></video>
+                        ${deleteBtn}
+                        <div class="views" style="bottom:10px; left:10px;"><i class="fa-solid fa-heart"></i> ${v.likes.length} &nbsp; <i class="fa-solid fa-comment"></i> ${v.comments.length}</div>
+                    </div>`;
+                });
+            }
+        }
+
+        // Edit Profile Logic
+        const closeEditBtn = document.getElementById('close-edit-modal');
+        if(closeEditBtn) closeEditBtn.addEventListener('click', () => document.getElementById('edit-profile-modal').classList.remove('active'));
+        
+        const editForm = document.getElementById('edit-profile-form');
+        if(editForm) {
+            editForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('edit-name').value.trim();
+                const bio = document.getElementById('edit-bio').value.trim();
+                const picFile = document.getElementById('edit-pic').files[0];
+
+                const updates = { fullname: name, bio: bio };
+
+                if(picFile) {
+                    const reader = new FileReader();
+                    reader.onload = async function(evt) {
+                        updates.profile_pic = evt.target.result;
+                        await DB.updateUser(currentUser.id, updates);
+                        window.location.reload();
+                    };
+                    reader.readAsDataURL(picFile);
+                } else {
+                    await DB.updateUser(currentUser.id, updates);
+                    window.location.reload();
+                }
+            });
+        }
+    }
+
+    // Inbox Logic
+    if(window.location.pathname.includes('inbox.html')) {
+        const tabNotif = document.getElementById('tab-notifications');
+        const tabReq = document.getElementById('tab-requests');
+        const viewNotif = document.getElementById('view-notifications');
+        const viewReq = document.getElementById('view-requests');
+        const reqList = document.getElementById('requests-list');
+
+        // Render requests
+        const pending = currentUser.pendingFollowers || [];
+        document.getElementById('req-count').textContent = pending.length;
+
+        if(pending.length === 0) {
+            reqList.innerHTML = '<p style="color:var(--text-secondary); text-align:center; padding:20px;">No new follow requests.</p>';
+        } else {
+            reqList.innerHTML = '';
+            for (const id of pending) {
+                const u = await DB.getUser(id);
+                if(u) {
+                    reqList.innerHTML += `
+                    <div class="notification" style="align-items:center;">
+                        <img src="${u.profilePic}" onclick="window.location.href='profile.html?id=${u.id}'" style="cursor:pointer;">
+                        <div style="flex:1;">
+                            <strong onclick="window.location.href='profile.html?id=${u.id}'" style="cursor:pointer; color:var(--text-main);">${u.fullname}</strong>
+                            <div style="font-size:0.8rem; color:var(--text-secondary);">wants to follow you</div>
+                        </div>
+                        <div class="req-actions">
+                            <button class="btn-req-accept" onclick="handleReq('accept', '${u.id}')">Accept</button>
+                            <button class="btn-req-reject" onclick="handleReq('reject', '${u.id}')"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </div>`;
+                }
+            }
+        }
+
+        tabNotif.addEventListener('click', () => {
+            tabNotif.classList.add('active'); tabReq.classList.remove('active');
+            viewNotif.style.display = 'block'; viewReq.style.display = 'none';
+        });
+        tabReq.addEventListener('click', () => {
+            tabReq.classList.add('active'); tabNotif.classList.remove('active');
+            viewReq.style.display = 'block'; viewNotif.style.display = 'none';
+        });
+    }
+
+    // Chat Logic
+    if(window.location.pathname.includes('chat.html')) {
+        const urlParams = new URLSearchParams(window.location.search);
+        let activeUserId = urlParams.get('user');
+
+        const friendsList = document.getElementById('chat-friends-list');
+        // Users we are following OR are following us
+        const allUsers = await DB.getUsers();
+        const chatUsers = allUsers.filter(u => u.id !== currentUser.id && (currentUser.following.includes(u.id) || currentUser.followers.includes(u.id)));
+
+        if(chatUsers.length === 0) {
+            friendsList.innerHTML = '<p style="padding:20px; color:var(--text-secondary);">Follow someone to start chatting!</p>';
+        } else {
+            chatUsers.forEach(u => {
+                const div = document.createElement('div');
+                div.className = `chat-user ${activeUserId === u.id ? 'active' : ''}`;
+                div.onclick = () => window.location.href = `chat.html?user=${u.id}`;
+                div.innerHTML = `
+                    <img src="${u.profilePic}">
+                    <div class="chat-user-info">
+                        <h4>${u.fullname}</h4>
+                        <p>Tap to chat</p>
+                    </div>
+                `;
+                friendsList.appendChild(div);
+            });
+        }
+
+        if(activeUserId) {
+            document.getElementById('no-chat-selected').style.display = 'none';
+            document.getElementById('chat-window').style.display = 'flex';
+            
+            const activeUser = await DB.getUser(activeUserId);
+            document.getElementById('chat-active-img').src = activeUser.profilePic;
+            document.getElementById('chat-active-name').textContent = activeUser.fullname;
+
+            await renderMessages(activeUserId);
+
+            const sendBtn = document.getElementById('send-msg-btn');
+            const input = document.getElementById('chat-input-msg');
+
+            const sendMsg = async () => {
+                const text = input.value.trim();
+                if(text) {
+                    input.value = '';
+                    await DB.sendMessage(currentUser.id, activeUserId, text);
+                    await renderMessages(activeUserId);
+                }
+            };
+
+            sendBtn.onclick = sendMsg;
+            input.onkeypress = (e) => { if(e.key === 'Enter') sendMsg(); };
+        }
+
+        async function renderMessages(otherId) {
+            const container = document.getElementById('chat-messages');
+            container.innerHTML = '';
+            const allMsgs = await DB.getMessages();
+            const conversation = allMsgs.filter(m => (m.senderId === currentUser.id && m.receiverId === otherId) || (m.senderId === otherId && m.receiverId === currentUser.id));
+            
+            if(conversation.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:var(--text-secondary); margin-top:auto; margin-bottom:auto;">Say hi to ' + (await DB.getUser(otherId)).fullname + '!</p>';
+            }
+
+            conversation.forEach(m => {
+                const isMine = m.senderId === currentUser.id;
+                container.innerHTML += `<div class="message ${isMine ? 'sent' : 'received'}">${m.text}</div>`;
+            });
+            container.scrollTop = container.scrollHeight;
+        }
+    }
+
+    // Upload Video Logic
+    const uploadForm = document.getElementById('upload-form');
+    if(uploadForm) {
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById('video-file');
+            const caption = document.getElementById('video-caption').value.trim();
+            const btn = document.getElementById('upload-btn');
+            
+            if(fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                if(file.size > 2 * 1024 * 1024) {
+                    alert('File is too large! Please select a video under 2MB.');
+                    return;
+                }
+
+                btn.textContent = 'Uploading...';
+                btn.disabled = true;
+
+                const reader = new FileReader();
+                reader.onload = async function(evt) {
+                    try {
+                        const mentionedId = document.getElementById('mentioned-user-id').value;
+                        await DB.createVideo(currentUser.id, evt.target.result, caption, mentionedId || null);
+                        window.location.href = 'profile.html';
+                    } catch (e) {
+                        alert('Upload failed: ' + e.message);
+                        btn.textContent = 'Post';
+                        btn.disabled = false;
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    // Mention Input Logic
+    const mentionInput = document.getElementById('mention-input');
+    const mentionResults = document.getElementById('mention-results');
+    const mentionedUserIdInput = document.getElementById('mentioned-user-id');
+    const selectedMention = document.getElementById('selected-mention');
+
+    if (mentionInput) {
+        mentionInput.addEventListener('input', async (e) => {
+            const query = e.target.value.trim().replace('@', '');
+            if (query.length < 2) {
+                mentionResults.style.display = 'none';
+                return;
+            }
+            const users = await DB.searchUsers(query);
+            if (users.length > 0) {
+                mentionResults.style.display = 'block';
+                mentionResults.innerHTML = users.map(u => `
+                    <div class="search-user-item" style="display:flex; align-items:center; padding:10px; cursor:pointer; border-bottom:1px solid var(--border);" data-id="${u.id}" data-name="${u.fullname}">
+                        <img src="${u.profile_pic || 'default.png'}" style="width:30px; height:30px; border-radius:50%; margin-right:10px; object-fit:cover;">
+                        <span>${u.fullname}</span>
+                    </div>
+                `).join('');
+
+                mentionResults.querySelectorAll('.search-user-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        mentionedUserIdInput.value = item.getAttribute('data-id');
+                        selectedMention.textContent = `Mentioned: @${item.getAttribute('data-name').replace(/\s+/g, '').toLowerCase()}`;
+                        selectedMention.style.display = 'block';
+                        mentionInput.value = '';
+                        mentionResults.style.display = 'none';
+                    });
+                });
+            } else {
+                mentionResults.style.display = 'block';
+                mentionResults.innerHTML = '<div style="padding:10px;">No users found.</div>';
+            }
+        });
+    }
+
+    // Search Nav Logic
+    const searchInput = document.getElementById('search-input');
+    const searchResults = document.getElementById('search-results');
+    if (searchInput && searchResults) {
+        searchInput.addEventListener('input', async (e) => {
+            const query = e.target.value.trim();
+            if (query.length < 2) {
+                searchResults.style.display = 'none';
+                return;
+            }
+            const users = await DB.searchUsers(query);
+            if (users.length > 0) {
+                searchResults.style.display = 'block';
+                searchResults.innerHTML = users.map(u => `
+                    <div class="search-user-item" onclick="window.location.href='profile.html?id=${u.id}'" style="display:flex; align-items:center; padding:10px; cursor:pointer; border-bottom:1px solid var(--border);">
+                        <img src="${u.profile_pic || 'default.png'}" style="width:40px; height:40px; border-radius:50%; margin-right:10px; object-fit:cover;">
+                        <span>${u.fullname}</span>
+                    </div>
+                `).join('');
+            } else {
+                searchResults.style.display = 'block';
+                searchResults.innerHTML = '<div style="padding:10px;">No users found.</div>';
+            }
+        });
+        
+        document.addEventListener('click', (e) => {
+            if(!e.target.closest('.search-box')) {
+                searchResults.style.display = 'none';
+            }
+        });
+    }
+
+    // Notifications Logic
+    const notifBtn = document.getElementById('notification-btn');
+    const notifDropdown = document.getElementById('notification-dropdown');
+    const notifBadge = document.getElementById('notif-badge');
+    const notifList = document.getElementById('notif-list');
+
+    if (notifBtn) {
+        // Fetch Notifications
+        const notifications = await DB.getNotifications(currentUser.id);
+        const unreadCount = notifications.filter(n => !n.is_read).length;
+        if (unreadCount > 0) {
+            notifBadge.style.display = 'block';
+            notifBadge.textContent = unreadCount;
+        }
+
+        notifBtn.addEventListener('click', async () => {
+            notifDropdown.style.display = notifDropdown.style.display === 'none' ? 'block' : 'none';
+            if (notifDropdown.style.display === 'block') {
+                if (notifications.length === 0) {
+                    notifList.innerHTML = '<p style="color:var(--text-secondary); text-align:center;">No notifications</p>';
+                } else {
+                    notifList.innerHTML = notifications.map(n => {
+                        let text = '';
+                        if (n.type === 'mention') text = 'mentioned you in a video.';
+                        else if (n.type === 'like') text = 'liked your video.';
+                        else if (n.type === 'comment') text = 'commented on your video.';
+                        else if (n.type === 'follow') text = 'started following you.';
+                        return `
+                        <div style="display:flex; align-items:center; padding:10px; border-bottom:1px solid var(--border); ${n.is_read ? '' : 'background: rgba(255,0,80,0.1);'}">
+                            <img src="${n.sender.profile_pic}" style="width:30px; height:30px; border-radius:50%; margin-right:10px; object-fit:cover;">
+                            <span style="font-size:0.9rem;"><strong>${n.sender.fullname}</strong> ${text}</span>
+                        </div>
+                        `;
+                    }).join('');
+                }
+            }
+        });
+        
+        document.addEventListener('click', (e) => {
+            if(!e.target.closest('#notification-btn') && !e.target.closest('#notification-dropdown')) {
+                notifDropdown.style.display = 'none';
+            }
+        });
+    }
+
+});
+
+// Global async functions for inline HTML calls
+window.toggleLike = async function(videoId, btnElement) {
+    const currentUser = await DB.getCurrentUser();
+    const isLiked = btnElement.classList.contains('liked');
+    
+    await DB.toggleLike(videoId, currentUser.id, isLiked);
+    
+    if(isLiked) {
+        btnElement.classList.remove('liked');
+        btnElement.querySelector('.likes-count').textContent = parseInt(btnElement.querySelector('.likes-count').textContent) - 1;
+    } else {
+        btnElement.classList.add('liked');
+        btnElement.querySelector('.likes-count').textContent = parseInt(btnElement.querySelector('.likes-count').textContent) + 1;
+    }
+};
+
+window.followUserFromFeed = async function(userId) {
+    const currentUser = await DB.getCurrentUser();
+    await DB.requestFollow(currentUser.id, userId);
+    window.location.reload(); 
+};
+
+window.handleReq = async function(action, userId) {
+    const currentUser = await DB.getCurrentUser();
+    if(action === 'accept') {
+        await DB.acceptFollow(currentUser.id, userId);
+    } else {
+        await DB.rejectFollow(currentUser.id, userId);
+    }
+    window.location.reload();
+};
+
+window.openComments = async function(videoId) {
+    const modal = document.getElementById('comments-modal');
+    const list = document.getElementById('comments-list');
+    const input = document.getElementById('comment-input');
+    const sendBtn = document.getElementById('send-comment-btn');
+    
+    const allVideos = await DB.getVideos();
+    const vid = allVideos.find(v => v.id === videoId);
+    
+    list.innerHTML = '';
+    if(vid.comments.length === 0) {
+        list.innerHTML = '<p style="text-align:center; color:var(--text-secondary); margin-top:20px;">No comments yet. Be the first to comment!</p>';
+    } else {
+        for (const c of vid.comments) {
+            const u = await DB.getUser(c.userId);
+            if(u) {
+                list.innerHTML += `
+                <div class="comment-item">
+                    <img src="${u.profilePic}">
+                    <div class="ci-content">
+                        <h4>${u.fullname}</h4>
+                        <p>${c.text}</p>
+                    </div>
+                </div>`;
+            }
+        }
+    }
+    
+    modal.classList.add('active');
+    
+    sendBtn.onclick = async () => {
+        const txt = input.value.trim();
+        if(txt) {
+            const currentUser = await DB.getCurrentUser();
+            await DB.addComment(videoId, currentUser.id, txt);
+            input.value = '';
+            
+            // Update UI comment count
+            const vidContainer = document.querySelector(`.video-container[data-id="${videoId}"]`);
+            if(vidContainer) {
+                const countSpan = vidContainer.querySelector('.comment-btn .comments-count');
+                if(countSpan) countSpan.textContent = parseInt(countSpan.textContent) + 1;
+            }
+            
+            await window.openComments(videoId); // re-render
+        }
+    };
+};
+
+window.closeComments = function() {
+    document.getElementById('comments-modal').classList.remove('active');
+};
+
+window.deleteVideo = async (id) => {
+    if(confirm('Are you sure you want to delete this video?')) {
+        await DB.deleteVideo(id);
+        window.location.reload();
+    }
+};

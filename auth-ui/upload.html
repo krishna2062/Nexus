@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/jpeg" href="logo.jpg">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus - Upload</title>
+    <link rel="stylesheet" href="shared.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-left">
+            <a href="dashboard.html" class="logo"><img src="logo.jpg" alt="Nexus" style="height:35px; width:35px; vertical-align:middle; border-radius:8px; margin-right:10px;">nexus<span style="color:var(--cyan)">.</span></a>
+        </div>
+        <div class="search-box">
+            <input type="text" placeholder="Search accounts and videos">
+            <i class="fa-solid fa-search" style="color: var(--text-secondary); cursor: pointer;"></i>
+        </div>
+        <div class="nav-right">
+            <a href="upload.html" class="btn-upload"><i class="fa-solid fa-plus"></i> Upload</a>
+            <a href="chat.html" class="nav-icon" title="Chat"><i class="fa-regular fa-comment-dots"></i></a>
+            <a href="inbox.html" class="nav-icon" title="Inbox"><i class="fa-regular fa-paper-plane"></i></a>
+            <a href="profile.html" class="profile-nav">
+                <img src="" class="my-profile-pic" alt="Profile">
+            </a>
+            <a href="#" class="nav-icon" title="Logout" onclick="DB.logout()" style="color:var(--text-secondary); margin-left:10px;"><i class="fa-solid fa-arrow-right-from-bracket"></i></a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <aside class="sidebar">
+            <div class="sidebar-nav">
+                <a href="dashboard.html" class="sidebar-item"><i class="fa-solid fa-house"></i> For You</a>
+                <a href="dashboard.html" class="sidebar-item"><i class="fa-solid fa-user-group"></i> Following</a>
+                    <a href="upload.html" class="sidebar-item upload-bottom-nav" style="display:none;"><i class="fa-solid fa-plus" style="background:var(--primary); color:white; border-radius:10px; padding:5px 10px;"></i></a>
+                            <a href="profile.html" class="sidebar-item"><i class="fa-regular fa-user"></i> Profile</a>
+                            </div>
+            <div class="following-list">
+                <h4>Following accounts</h4>
+                <div id="following-list">
+                    <!-- JS fills this -->
+                </div>
+            </div>
+        </aside>
+
+        <main class="content-area" style="display:block; overflow-y:auto; scroll-snap-type:none;">
+            <div class="upload-container">
+                <h2>Upload video</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 30px;">Post a video to your account</p>
+                
+                <form id="upload-form" class="upload-form">
+                    <div class="form-group">
+                        <label>Select Video from Device</label>
+                        <div style="border: 2px dashed var(--border); padding: 40px; text-align: center; border-radius: 8px; margin-bottom: 10px; background: var(--bg-color);">
+                            <i class="fa-solid fa-cloud-arrow-up" style="font-size: 3rem; color: var(--text-secondary); margin-bottom: 15px;"></i>
+                            <p style="margin-bottom: 15px;">Select video to upload</p>
+                            <input type="file" id="video-file" accept="video/mp4,video/webm" required style="width: 100%; border:none; background:transparent;">
+                        </div>
+                        <small style="color:var(--primary); font-weight:bold;">Important: Since this is a local demo, please upload a VERY small video (Under 2MB) otherwise it will crash the browser storage.</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Caption</label>
+                        <textarea id="video-caption" rows="4" placeholder="Write a description or add hashtags..." required></textarea>
+                    </div>
+                    <div class="form-group" style="position: relative;">
+                        <label>Mention a Friend (Optional)</label>
+                        <input type="text" id="mention-input" placeholder="@search friend name">
+                        <input type="hidden" id="mentioned-user-id">
+                        <div id="mention-results" style="display:none; position:absolute; background:var(--surface); width:100%; max-height:150px; overflow-y:auto; border-radius:5px; z-index:10; border:1px solid var(--border);"></div>
+                        <div id="selected-mention" style="color:var(--primary); font-weight:bold; margin-top:5px;"></div>
+                    </div>
+                    <button type="submit" class="btn-primary" style="width: 100%; padding: 15px;" id="upload-btn">Post</button>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="db.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

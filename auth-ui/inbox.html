@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/jpeg" href="logo.jpg">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus - Inbox & Requests</title>
+    <link rel="stylesheet" href="shared.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .inbox-nav { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+        .inbox-nav-item { padding: 10px 20px; cursor: pointer; color: var(--text-secondary); font-weight: 600; border-bottom: 2px solid transparent; }
+        .inbox-nav-item.active { color: var(--text-main); border-bottom-color: var(--text-main); }
+        .req-actions { display: flex; gap: 10px; margin-left: auto; }
+        .btn-req-accept { background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; }
+        .btn-req-reject { background: var(--surface); color: white; border: 1px solid var(--border); padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-left">
+            <a href="dashboard.html" class="logo"><img src="logo.jpg" alt="Nexus" style="height:35px; width:35px; vertical-align:middle; border-radius:8px; margin-right:10px;">nexus<span style="color:var(--cyan)">.</span></a>
+        </div>
+        <div class="search-box">
+            <input type="text" placeholder="Search accounts and videos">
+            <i class="fa-solid fa-search" style="color: var(--text-secondary); cursor: pointer;"></i>
+        </div>
+        <div class="nav-right">
+            <a href="upload.html" class="btn-upload"><i class="fa-solid fa-plus"></i> Upload</a>
+            <a href="chat.html" class="nav-icon" title="Chat"><i class="fa-regular fa-comment-dots"></i></a>
+            <a href="inbox.html" class="nav-icon active" title="Inbox"><i class="fa-regular fa-paper-plane"></i></a>
+            <a href="profile.html" class="profile-nav">
+                <img src="" class="my-profile-pic" alt="Profile">
+            </a>
+            <a href="#" class="nav-icon" title="Logout" onclick="DB.logout()" style="color:var(--text-secondary); margin-left:10px;"><i class="fa-solid fa-arrow-right-from-bracket"></i></a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <aside class="sidebar">
+            <div class="sidebar-nav">
+                <a href="dashboard.html" class="sidebar-item"><i class="fa-solid fa-house"></i> For You</a>
+                <a href="dashboard.html" class="sidebar-item"><i class="fa-solid fa-user-group"></i> Following</a>
+                    <a href="upload.html" class="sidebar-item upload-bottom-nav" style="display:none;"><i class="fa-solid fa-plus" style="background:var(--primary); color:white; border-radius:10px; padding:5px 10px;"></i></a>
+                            <a href="profile.html" class="sidebar-item"><i class="fa-regular fa-user"></i> Profile</a>
+                            </div>
+            <div class="following-list">
+                <h4>Following accounts</h4>
+                <div id="following-list">
+                    <!-- JS fills this -->
+                </div>
+            </div>
+        </aside>
+
+        <main class="content-area" style="display:block; overflow-y:auto; scroll-snap-type:none;">
+            <div class="inbox-container">
+                <h2 style="margin-bottom: 20px;">Inbox</h2>
+                
+                <div class="inbox-nav">
+                    <div class="inbox-nav-item active" id="tab-notifications">Notifications</div>
+                    <div class="inbox-nav-item" id="tab-requests">Follow Requests <span id="req-count" style="background:var(--primary); color:white; padding:2px 6px; border-radius:10px; font-size:0.75rem; margin-left:5px;">0</span></div>
+                </div>
+
+                <div id="view-notifications">
+                    <div class="notification">
+                        <img src="https://ui-avatars.com/api/?name=System">
+                        <p><strong>System</strong> Welcome to Nexus! Start discovering short videos and following creators.</p>
+                        <span>Just now</span>
+                    </div>
+                </div>
+
+                <div id="view-requests" style="display:none;">
+                    <div id="requests-list">
+                        <!-- JS fills this -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="db.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

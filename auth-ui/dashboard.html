@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/jpeg" href="logo.jpg">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus - For You</title>
+    <link rel="stylesheet" href="shared.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-left">
+            <a href="dashboard.html" class="logo"><img src="logo.jpg" alt="Nexus" style="height:35px; width:35px; vertical-align:middle; border-radius:8px; margin-right:10px;">nexus<span style="color:var(--cyan)">.</span></a>
+        </div>
+        <div class="search-box" style="position: relative;">
+            <input type="text" id="search-input" placeholder="Search accounts and videos">
+            <i class="fa-solid fa-search" style="color: var(--text-secondary); cursor: pointer;"></i>
+            <div id="search-results" style="display:none; position:absolute; top:40px; left:0; right:0; background:var(--surface); max-height:300px; overflow-y:auto; border-radius:8px; z-index:1000; box-shadow:0 4px 10px rgba(0,0,0,0.5);"></div>
+        </div>
+        <div class="nav-right" style="position: relative;">
+            <a href="upload.html" class="btn-upload"><i class="fa-solid fa-plus"></i> Upload</a>
+            <a href="inbox.html" class="nav-icon" title="Inbox"><i class="fa-regular fa-paper-plane"></i></a>
+            
+            <div class="nav-icon" id="notification-btn" title="Notifications" style="cursor:pointer; position:relative;">
+                <i class="fa-solid fa-bell"></i>
+                <span id="notif-badge" style="display:none; position:absolute; top:-5px; right:-5px; background:var(--primary); color:#fff; font-size:0.6rem; padding:2px 5px; border-radius:10px;">0</span>
+            </div>
+            <div id="notification-dropdown" style="display:none; position:absolute; top:45px; right:50px; width:300px; background:var(--surface); box-shadow:0 4px 10px rgba(0,0,0,0.5); border-radius:8px; max-height:400px; overflow-y:auto; z-index:1000; padding:10px;">
+                <h4 style="margin:0 0 10px 0; border-bottom:1px solid var(--border); padding-bottom:5px;">Notifications</h4>
+                <div id="notif-list"></div>
+            </div>
+
+            <a href="profile.html" class="profile-nav">
+                <img src="" class="my-profile-pic" alt="Profile">
+            </a>
+            <a href="#" class="nav-icon" title="Logout" onclick="DB.logout()" style="color:var(--text-secondary); margin-left:10px;"><i class="fa-solid fa-arrow-right-from-bracket"></i></a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <aside class="sidebar">
+            <div class="sidebar-nav">
+                <a href="dashboard.html" class="sidebar-item" id="nav-foryou"><i class="fa-solid fa-house"></i> For You</a>
+                <a href="dashboard.html?feed=following" class="sidebar-item" id="nav-following"><i class="fa-solid fa-user-group"></i> Following</a>
+                    <a href="upload.html" class="sidebar-item upload-bottom-nav" style="display:none;"><i class="fa-solid fa-plus" style="background:var(--primary); color:white; border-radius:10px; padding:5px 10px;"></i></a>
+                            <a href="profile.html" class="sidebar-item"><i class="fa-regular fa-user"></i> Profile</a>
+                            </div>
+            <div class="following-list">
+                <h4>Following accounts</h4>
+                <div id="following-list">
+                    <!-- JS fills this -->
+                </div>
+            </div>
+            
+
+        </aside>
+
+        <main class="content-area">
+            <div id="video-feed">
+                <!-- Videos JS injected here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Comments Modal -->
+    <div class="comments-modal" id="comments-modal">
+        <div class="cm-header">
+            <h3>Comments</h3>
+            <i class="fa-solid fa-xmark" onclick="closeComments()"></i>
+        </div>
+        <div class="cm-body" id="comments-list">
+            <!-- Comments JS injected here -->
+        </div>
+        <div class="cm-input-area">
+            <input type="text" id="comment-input" placeholder="Add comment...">
+            <button id="send-comment-btn">Post</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="db.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

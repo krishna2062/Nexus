@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/jpeg" href="logo.jpg">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus - Reels</title>
+    <link rel="stylesheet" href="shared.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .reels-container { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
+        .reel-card { width: 300px; height: 500px; background: #000; border-radius: 12px; position: relative; overflow: hidden; box-shadow: var(--shadow); }
+        .reel-video-placeholder { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; }
+        .reel-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 20px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); color: white; display: flex; justify-content: space-between; align-items: flex-end; }
+        .reel-author { display: flex; align-items: center; gap: 10px; font-weight: 500; }
+        .reel-author img { width: 36px; height: 36px; border-radius: 50%; border: 2px solid white; }
+        .reel-actions { display: flex; flex-direction: column; gap: 15px; }
+        .reel-action { display: flex; flex-direction: column; align-items: center; font-size: 1.5rem; cursor: pointer; transition: 0.2s;}
+        .reel-action span { font-size: 0.8rem; margin-top: 5px; }
+        .reel-action.liked { color: #ed4956; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-left">
+            <h1 class="logo"><img src="logo.jpg" alt="Nexus" style="height:35px; width:35px; vertical-align:middle; border-radius:8px; margin-right:10px;">nexus</h1>
+            <div class="search-box">
+                <i class="fa-solid fa-search"></i>
+                <input type="text" placeholder="Search Nexus">
+            </div>
+        </div>
+        <div class="nav-center">
+            <a href="dashboard.html" class="nav-icon" title="Home"><i class="fa-solid fa-house"></i></a>
+            <a href="friends.html" class="nav-icon" title="Friends"><i class="fa-solid fa-users"></i></a>
+            <a href="reels.html" class="nav-icon active" title="Reels"><i class="fa-solid fa-video"></i></a>
+            <a href="chat.html" class="nav-icon" title="Chat"><i class="fa-solid fa-message"></i></a>
+        </div>
+        <div class="nav-right">
+            <a href="profile.html" class="profile-nav">
+                <img src="" class="my-profile-pic" alt="Profile">
+                <span class="my-profile-name">User</span>
+            </a>
+            <div class="nav-action-icon" id="logout-btn" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></div>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <aside class="left-sidebar">
+            <a href="profile.html" class="sidebar-item">
+                <img src="" class="my-profile-pic">
+                <span class="my-profile-name">User</span>
+            </a>
+            <a href="friends.html" class="sidebar-item"><i class="fa-solid fa-user-group" style="color: #1877f2;"></i> Friends</a>
+            <a href="reels.html" class="sidebar-item" style="background: var(--hover-bg);"><i class="fa-solid fa-play" style="color: #e42645;"></i> Reels</a>
+        </aside>
+
+        <main class="content-area">
+            <div class="reels-container">
+                <div class="reel-card">
+                    <img src="https://picsum.photos/300/500?4" class="reel-video-placeholder">
+                    <div class="reel-overlay">
+                        <div class="reel-author">
+                            <img src="https://ui-avatars.com/api/?name=Travel">
+                            <span>Travel Vlogs</span>
+                        </div>
+                        <div class="reel-actions">
+                            <div class="reel-action like-btn" onclick="this.classList.toggle('liked'); this.querySelector('i').classList.toggle('fa-solid'); this.querySelector('i').classList.toggle('fa-regular');"><i class="fa-regular fa-heart"></i> <span>1.2k</span></div>
+                            <div class="reel-action"><i class="fa-regular fa-comment"></i> <span>45</span></div>
+                            <div class="reel-action"><i class="fa-solid fa-share"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="reel-card">
+                    <img src="https://picsum.photos/300/500?5" class="reel-video-placeholder">
+                    <div class="reel-overlay">
+                        <div class="reel-author">
+                            <img src="https://ui-avatars.com/api/?name=Funny">
+                            <span>Comedy King</span>
+                        </div>
+                        <div class="reel-actions">
+                            <div class="reel-action like-btn" onclick="this.classList.toggle('liked'); this.querySelector('i').classList.toggle('fa-solid'); this.querySelector('i').classList.toggle('fa-regular');"><i class="fa-regular fa-heart"></i> <span>3.4k</span></div>
+                            <div class="reel-action"><i class="fa-regular fa-comment"></i> <span>120</span></div>
+                            <div class="reel-action"><i class="fa-solid fa-share"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="db.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
