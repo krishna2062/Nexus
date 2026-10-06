@@ -40,11 +40,12 @@
     <div class="main-container">
         <aside class="sidebar">
             <div class="sidebar-nav">
-                <a href="dashboard.html" class="sidebar-item"><i class="fa-solid fa-house"></i> For You</a>
-                <a href="dashboard.html" class="sidebar-item"><i class="fa-solid fa-user-group"></i> Following</a>
-                    <a href="upload.html" class="sidebar-item upload-bottom-nav" style="display:none;"><i class="fa-solid fa-plus" style="background:var(--primary); color:white; border-radius:10px; padding:5px 10px;"></i></a>
-                            <a href="profile.html" class="sidebar-item"><i class="fa-regular fa-user"></i> Profile</a>
-                            </div>
+                <a href="dashboard.html" class="sidebar-item" id="nav-foryou"><i class="fa-solid fa-house"></i> For You</a>
+                <a href="dashboard.html?feed=following" class="sidebar-item" id="nav-following"><i class="fa-solid fa-user-group"></i> Following</a>
+                <a href="upload.html" class="sidebar-item upload-bottom-nav" style="display:none;"><i class="fa-solid fa-plus" style="background:var(--primary); color:white; border-radius:10px; padding:5px 10px;"></i></a>
+                <a href="profile.html" class="sidebar-item"><i class="fa-regular fa-user"></i> Profile</a>
+                <a href="#" class="sidebar-item" onclick="document.getElementById('mobile-search-modal').classList.add('active')"><i class="fa-solid fa-search"></i> Search</a>
+            </div>
             <div class="following-list">
                 <h4>Following accounts</h4>
                 <div id="following-list">

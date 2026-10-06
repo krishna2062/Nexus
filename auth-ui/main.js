@@ -10,9 +10,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Inject mobile search UI
     const searchHTML = `
-    <div class="mobile-search-fab" onclick="document.getElementById('mobile-search-modal').classList.add('active')">
-        <i class="fa-solid fa-search"></i>
-    </div>
     <div class="modal-overlay" id="mobile-search-modal">
         <div class="modal-card" style="width: 100%; height: 100%; border-radius: 0; display: flex; flex-direction: column; max-width: none;">
             <div style="display: flex; gap: 10px; margin-bottom: 20px;">
