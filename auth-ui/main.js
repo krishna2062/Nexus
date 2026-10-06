@@ -497,21 +497,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             conversation.forEach(m => {
                 const isMine = m.senderId === currentUser.id;
-                container.innerHTML += `<div class="message ${isMine ? 'sent' : 'received'}">${m.text}</div>`;
+                const timeStr = new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                container.innerHTML += `<div class="message ${isMine ? 'sent' : 'received'}">${m.text} <span class="msg-time">${timeStr}</span></div>`;
             });
             container.scrollTop = container.scrollHeight;
         }
 
             conversation.forEach(m => {
                 const isMine = m.senderId === currentUser.id;
-                container.innerHTML += `<div class="message ${isMine ? 'sent' : 'received'}">${m.text}</div>`;
+                const timeStr = new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                container.innerHTML += `<div class="message ${isMine ? 'sent' : 'received'}">${m.text} <span class="msg-time">${timeStr}</span></div>`;
             });
             container.scrollTop = container.scrollHeight;
         }
 
             conversation.forEach(m => {
                 const isMine = m.senderId === currentUser.id;
-                container.innerHTML += `<div class="message ${isMine ? 'sent' : 'received'}">${m.text}</div>`;
+                const timeStr = new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                container.innerHTML += `<div class="message ${isMine ? 'sent' : 'received'}">${m.text} <span class="msg-time">${timeStr}</span></div>`;
             });
             container.scrollTop = container.scrollHeight;
         }
