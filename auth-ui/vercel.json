@@ -1,3 +1,8 @@
 {
-  "name": "nexus"
+  "name": "nexus-app",
+  "framework": null,
+  "github": {
+    "enabled": true,
+    "silent": true
+  }
 }

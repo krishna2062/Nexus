@@ -167,4 +167,26 @@ a { text-decoration: none; color: inherit; }
     
     /* Hide top nav upload button completely on mobile */
     .nav-right .btn-upload { display: none; }
+    
+    .mobile-search-fab {
+        display: flex !important;
+        position: fixed;
+        bottom: 80px;
+        right: 20px;
+        width: 55px;
+        height: 55px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--cyan));
+        color: white;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        z-index: 999;
+        cursor: pointer;
+    }
+}
+
+.mobile-search-fab {
+    display: none;
 }

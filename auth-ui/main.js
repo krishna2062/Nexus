@@ -8,6 +8,78 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Pre-fetch all users for performance
     window.allUsersCache = await DB.getUsers();
 
+    // Inject mobile search UI
+    const searchHTML = `
+    <div class="mobile-search-fab" onclick="document.getElementById('mobile-search-modal').classList.add('active')">
+        <i class="fa-solid fa-search"></i>
+    </div>
+    <div class="modal-overlay" id="mobile-search-modal">
+        <div class="modal-card" style="width: 100%; height: 100%; border-radius: 0; display: flex; flex-direction: column; max-width: none;">
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <input type="text" id="mobile-search-input" placeholder="Search friends..." style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-color); color: white;">
+                <button class="btn-secondary" onclick="document.getElementById('mobile-search-modal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="mobile-search-results" style="flex: 1; overflow-y: auto;">
+            </div>
+        </div>
+    </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', searchHTML);
+
+    const mSearchInput = document.getElementById('mobile-search-input');
+    const mSearchResults = document.getElementById('mobile-search-results');
+    
+    if (mSearchInput) {
+        mSearchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            mSearchResults.innerHTML = '';
+            if(!query) return;
+            
+            const matches = window.allUsersCache.filter(u => u.fullname.toLowerCase().includes(query) || u.email.toLowerCase().includes(query));
+            matches.forEach(u => {
+                mSearchResults.innerHTML += `
+                <div class="user-item" onclick="window.location.href='profile.html?id=${u.id}'" style="display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid var(--border); cursor: pointer;">
+                    <img src="${u.profilePic}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                    <strong style="color: white;">${u.fullname}</strong>
+                </div>`;
+            });
+        });
+    }
+
+    // Desktop search
+    const dSearchInput = document.getElementById('search-input');
+    const dSearchResults = document.getElementById('search-results');
+    if (dSearchInput && dSearchResults) {
+        dSearchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            dSearchResults.innerHTML = '';
+            if(!query) {
+                dSearchResults.style.display = 'none';
+                return;
+            }
+            dSearchResults.style.display = 'block';
+            
+            const matches = window.allUsersCache.filter(u => u.fullname.toLowerCase().includes(query) || u.email.toLowerCase().includes(query));
+            if(matches.length === 0) {
+                dSearchResults.innerHTML = '<div style="padding: 10px; color: var(--text-secondary);">No results found</div>';
+                return;
+            }
+            matches.forEach(u => {
+                dSearchResults.innerHTML += `
+                <div class="user-item" onclick="window.location.href='profile.html?id=${u.id}'" style="display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid var(--border); cursor: pointer; color: white;">
+                    <img src="${u.profilePic}" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;">
+                    <strong>${u.fullname}</strong>
+                </div>`;
+            });
+        });
+        
+        document.addEventListener('click', (e) => {
+            if(!e.target.closest('.search-box')) {
+                dSearchResults.style.display = 'none';
+            }
+        });
+    }
+
     // Populate Sidebar Profile & Following List
     document.querySelectorAll('.my-profile-pic').forEach(el => el.src = currentUser.profilePic);
     
