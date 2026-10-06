@@ -503,23 +503,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             container.scrollTop = container.scrollHeight;
         }
 
-            conversation.forEach(m => {
-                const isMine = m.senderId === currentUser.id;
-                const timeStr = new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                container.innerHTML += `<div class="message ${isMine ? 'sent' : 'received'}">${m.text} <span class="msg-time">${timeStr}</span></div>`;
-            });
-            container.scrollTop = container.scrollHeight;
-        }
-
-            conversation.forEach(m => {
-                const isMine = m.senderId === currentUser.id;
-                const timeStr = new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                container.innerHTML += `<div class="message ${isMine ? 'sent' : 'received'}">${m.text} <span class="msg-time">${timeStr}</span></div>`;
-            });
-            container.scrollTop = container.scrollHeight;
-        }
     }
-
     // Upload Video Logic
     const uploadForm = document.getElementById('upload-form');
     if(uploadForm) {
@@ -681,7 +665,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }).join('');
                 }
             }
-        }, 300); });
+        });
         
         document.addEventListener('click', (e) => {
             if(!e.target.closest('#notification-btn') && !e.target.closest('#notification-dropdown')) {
