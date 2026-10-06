@@ -598,35 +598,53 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Search Nav Logic
     const searchInput = document.getElementById('search-input');
     const searchResults = document.getElementById('search-results');
-    if (searchInput && searchResults) {
-        searchInput.addEventListener('input', async (e) => {
-            const query = e.target.value.trim();
-            if (query.length < 2) {
-                searchResults.style.display = 'none';
-                return;
-            }
-            const users = await DB.searchUsers(query);
-            if (users.length > 0) {
-                searchResults.style.display = 'block';
-                searchResults.innerHTML = users.map(u => `
-                    <div class="search-user-item" onclick="window.location.href='profile.html?id=${u.id}'" style="display:flex; align-items:center; padding:10px; cursor:pointer; border-bottom:1px solid var(--border);">
-                        <img src="${u.profile_pic || 'default.png'}" style="width:40px; height:40px; border-radius:50%; margin-right:10px; object-fit:cover;">
-                        <span>${u.fullname}</span>
-                    </div>
-                `).join('');
+    const mobileSearchInput = document.getElementById('mobile-search-input');
+    const mobileSearchResults = document.getElementById('mobile-search-results');
+
+    async function performSearch(query, resultsContainer, isMobile=false) {
+        if (query.length < 2) {
+            if(isMobile) {
+                resultsContainer.innerHTML = '<p style="text-align:center; color:var(--text-secondary); margin-top:20px;">Type a username to search</p>';
             } else {
-                searchResults.style.display = 'block';
-                searchResults.innerHTML = '<div style="padding:10px;">No users found.</div>';
+                resultsContainer.style.display = 'none';
             }
-        });
+            return;
+        }
         
+        const users = await DB.searchUsers(query);
+        if(!isMobile) resultsContainer.style.display = 'block';
+        
+        if (users.length > 0) {
+            resultsContainer.innerHTML = users.map(u => `
+                <div class="search-user-item" onclick="window.location.href='profile.html?id=${u.id}'" style="display:flex; align-items:center; padding:10px; cursor:pointer; border-bottom:1px solid var(--border);">
+                    <img src="${u.profile_pic || 'https://ui-avatars.com/api/?name=User'}" style="width:40px; height:40px; border-radius:50%; margin-right:10px; object-fit:cover;">
+                    <div style="flex:1;">
+                        <div style="font-weight:600;">${u.fullname}</div>
+                        <div style="font-size:0.8rem; color:var(--text-secondary);">@${u.fullname.replace(/\s+/g, '').toLowerCase()}</div>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            resultsContainer.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-secondary);">No users found.</div>';
+        }
+    }
+
+    if (searchInput && searchResults) {
+        searchInput.addEventListener('input', (e) => performSearch(e.target.value.trim(), searchResults, false));
         document.addEventListener('click', (e) => {
             if(!e.target.closest('.search-box')) {
                 searchResults.style.display = 'none';
             }
         });
+        searchInput.addEventListener('focus', (e) => {
+            if(e.target.value.trim().length >= 2) searchResults.style.display = 'block';
+        });
     }
 
+    if (mobileSearchInput && mobileSearchResults) {
+        mobileSearchInput.addEventListener('input', (e) => performSearch(e.target.value.trim(), mobileSearchResults, true));
+    }
+    
     // Notifications Logic
     const notifBtn = document.getElementById('notification-btn');
     const notifDropdown = document.getElementById('notification-dropdown');
