@@ -156,6 +156,20 @@ const DB = {
     },
 
     // Messages
+    getConversation: async (user1Id, user2Id) => {
+        const { data, error } = await supabaseClient.from('messages')
+            .select('*')
+            .or(`and(sender_id.eq.${user1Id},receiver_id.eq.${user2Id}),and(sender_id.eq.${user2Id},receiver_id.eq.${user1Id})`)
+            .order('created_at', { ascending: true });
+        if(error || !data) return [];
+        return data.map(m => ({
+            id: m.id,
+            senderId: m.sender_id,
+            receiverId: m.receiver_id,
+            text: m.text,
+            timestamp: m.created_at
+        }));
+    },
     getMessages: async () => {
         const { data } = await supabaseClient.from('messages').select('*').order('created_at', { ascending: true });
         if(!data) return [];
@@ -169,6 +183,13 @@ const DB = {
     },
     sendMessage: async (senderId, receiverId, text) => {
         await supabaseClient.from('messages').insert({ sender_id: senderId, receiver_id: receiverId, text: text });
+    },
+    subscribeToMessages: (callback) => {
+        return supabaseClient.channel('public:messages')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+                callback(payload.new);
+            })
+            .subscribe();
     },
 
     // Search
@@ -190,6 +211,19 @@ const DB = {
     },
     getNotifications: async (userId) => {
         const { data, error } = await supabaseClient.from('notifications')
+            .select('*, sender:sender_id(fullname, profile_pic)')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        return data || [];
+    },
+    subscribeToNotifications: (userId, callback) => {
+        return supabaseClient.channel('public:notifications')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, payload => {
+                callback(payload.new);
+            })
+            .subscribe();
+    } = await supabaseClient.from('notifications')
             .select('*, sender:sender_id(fullname, profile_pic)')
             .eq('user_id', userId)
             .order('created_at', { ascending: false });

@@ -367,6 +367,47 @@ document.addEventListener('DOMContentLoaded', async () => {
             tabReq.classList.add('active'); tabNotif.classList.remove('active');
             viewReq.style.display = 'block'; viewNotif.style.display = 'none';
         });
+
+        // Notifications logic
+        let lastNotifCount = -1;
+        async function renderNotifs() {
+            const notifs = await DB.getNotifications(currentUser.id);
+            if (notifs.length === lastNotifCount) return;
+            lastNotifCount = notifs.length;
+            
+            if (notifs.length === 0) {
+                viewNotif.innerHTML = '<p style="color:var(--text-secondary); text-align:center; padding:20px;">No new notifications.</p>';
+            } else {
+                viewNotif.innerHTML = '';
+                notifs.forEach(n => {
+                    let text = "interacted with you";
+                    if (n.type === "like") text = "liked your video.";
+                    if (n.type === "comment") text = "commented on your video.";
+                    if (n.type === "follow") text = "started following you.";
+                    
+                    const senderName = n.sender ? n.sender.fullname : "Someone";
+                    const senderPic = n.sender ? n.sender.profile_pic : "https://ui-avatars.com/api/?name=User";
+                    
+                    const timeStr = new Date(n.created_at).toLocaleString();
+                    
+                    viewNotif.innerHTML += `
+                    <div class="notification">
+                        <img src="${senderPic}" onclick="window.location.href='profile.html?id=${n.sender_id}'" style="cursor:pointer;">
+                        <p><strong onclick="window.location.href='profile.html?id=${n.sender_id}'" style="cursor:pointer; color:white;">${senderName}</strong> ${text}</p>
+                        <span>${timeStr}</span>
+                    </div>`;
+                });
+            }
+        }
+        
+        renderNotifs();
+        setInterval(renderNotifs, 3000);
+        
+        if (DB.subscribeToNotifications) {
+            DB.subscribeToNotifications(currentUser.id, () => {
+                renderNotifs();
+            });
+        }
     }
 
     // Chat Logic
@@ -424,17 +465,49 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             sendBtn.onclick = sendMsg;
             input.onkeypress = (e) => { if(e.key === 'Enter') sendMsg(); };
+
+            // Realtime listener
+            if (DB.subscribeToMessages) {
+                DB.subscribeToMessages((newMessage) => {
+                    if ((newMessage.sender_id === activeUserId && newMessage.receiver_id === currentUser.id) || 
+                        (newMessage.sender_id === currentUser.id && newMessage.receiver_id === activeUserId)) {
+                        renderMessages(activeUserId);
+                    }
+                });
+            }
+            
+            // Fallback polling (every 3 seconds) in case realtime is not enabled on DB
+            setInterval(() => {
+                renderMessages(activeUserId);
+            }, 3000);
         }
 
+        let lastMessageCount = -1;
         async function renderMessages(otherId) {
             const container = document.getElementById('chat-messages');
-            container.innerHTML = '';
-            const allMsgs = await DB.getMessages();
-            const conversation = allMsgs.filter(m => (m.senderId === currentUser.id && m.receiverId === otherId) || (m.senderId === otherId && m.receiverId === currentUser.id));
+            const conversation = await DB.getConversation(currentUser.id, otherId);
             
+            if (conversation.length === lastMessageCount) return; // No new messages
+            lastMessageCount = conversation.length;
+            
+            container.innerHTML = '';
             if(conversation.length === 0) {
                 container.innerHTML = '<p style="text-align:center; color:var(--text-secondary); margin-top:auto; margin-bottom:auto;">Say hi to ' + (await DB.getUser(otherId)).fullname + '!</p>';
             }
+
+            conversation.forEach(m => {
+                const isMine = m.senderId === currentUser.id;
+                container.innerHTML += `<div class="message ${isMine ? 'sent' : 'received'}">${m.text}</div>`;
+            });
+            container.scrollTop = container.scrollHeight;
+        }
+
+            conversation.forEach(m => {
+                const isMine = m.senderId === currentUser.id;
+                container.innerHTML += `<div class="message ${isMine ? 'sent' : 'received'}">${m.text}</div>`;
+            });
+            container.scrollTop = container.scrollHeight;
+        }
 
             conversation.forEach(m => {
                 const isMine = m.senderId === currentUser.id;
