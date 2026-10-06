@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Pre-fetch all users for performance
-    window.allUsersCache = await DB.getUsers();
+    
 
     // Inject mobile search UI
     const searchHTML = `
@@ -27,27 +27,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     const mSearchResults = document.getElementById('mobile-search-results');
     
     if (mSearchInput) {
-        mSearchInput.addEventListener('input', (e) => {
+        let mSearchTimer; mSearchInput.addEventListener('input', (e) => { clearTimeout(mSearchTimer); mSearchTimer = setTimeout(async () => {
             const query = e.target.value.toLowerCase();
             mSearchResults.innerHTML = '';
             if(!query) return;
             
-            const matches = window.allUsersCache.filter(u => u.fullname.toLowerCase().includes(query) || u.email.toLowerCase().includes(query));
+            const matches = await DB.searchUsers(query);
             matches.forEach(u => {
                 mSearchResults.innerHTML += `
                 <div class="user-item" onclick="window.location.href='profile.html?id=${u.id}'" style="display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid var(--border); cursor: pointer;">
-                    <img src="${u.profilePic}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                    <img src="${u.profile_pic || 'https://ui-avatars.com/api/?name='+u.fullname}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
                     <strong style="color: white;">${u.fullname}</strong>
                 </div>`;
             });
-        });
+        }, 300); });
     }
 
     // Desktop search
     const dSearchInput = document.getElementById('search-input');
     const dSearchResults = document.getElementById('search-results');
     if (dSearchInput && dSearchResults) {
-        dSearchInput.addEventListener('input', (e) => {
+        let dSearchTimer; dSearchInput.addEventListener('input', (e) => { clearTimeout(dSearchTimer); dSearchTimer = setTimeout(async () => {
             const query = e.target.value.toLowerCase();
             dSearchResults.innerHTML = '';
             if(!query) {
@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             dSearchResults.style.display = 'block';
             
-            const matches = window.allUsersCache.filter(u => u.fullname.toLowerCase().includes(query) || u.email.toLowerCase().includes(query));
+            const matches = await DB.searchUsers(query);
             if(matches.length === 0) {
                 dSearchResults.innerHTML = '<div style="padding: 10px; color: var(--text-secondary);">No results found</div>';
                 return;
@@ -64,11 +64,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             matches.forEach(u => {
                 dSearchResults.innerHTML += `
                 <div class="user-item" onclick="window.location.href='profile.html?id=${u.id}'" style="display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid var(--border); cursor: pointer; color: white;">
-                    <img src="${u.profilePic}" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;">
+                    <img src="${u.profile_pic || 'https://ui-avatars.com/api/?name='+u.fullname}" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;">
                     <strong>${u.fullname}</strong>
                 </div>`;
             });
-        });
+        }, 300); });
         
         document.addEventListener('click', (e) => {
             if(!e.target.closest('.search-box')) {
@@ -85,11 +85,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         followingListEl.innerHTML = '';
         if(currentUser.following && currentUser.following.length > 0) {
             for (const id of currentUser.following) {
-                const u = window.allUsersCache.find(user => user.id === id);
+                const users = await DB.getUsersByIds([id]); const u = users[0];
                 if(u) {
                     followingListEl.innerHTML += `
                     <div class="user-item" onclick="window.location.href='profile.html?id=${u.id}'">
-                        <img src="${u.profilePic}">
+                        <img src="${u.profile_pic || 'https://ui-avatars.com/api/?name='+u.fullname}">
                         <div class="user-item-info">
                             <strong>${u.fullname}</strong>
                         </div>
@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const feedContainer = document.getElementById('video-feed');
     if(feedContainer) {
         feedContainer.innerHTML = '';
-        let videos = (await DB.getVideos()).reverse();
+        let videos = await DB.getVideos();
         
         const urlParams = new URLSearchParams(window.location.search);
         const feedType = urlParams.get('feed') || 'foryou';
@@ -137,10 +137,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         // Fetch all users once for performance
-        const allUsers = window.allUsersCache;
+        
 
         for (const vid of videos) {
-            const user = allUsers.find(u => u.id === vid.userId);
+            const user = vid.user;
             if(!user) continue;
             const isLiked = vid.likes.includes(currentUser.id);
             const isFollowing = currentUser.following && currentUser.following.includes(user.id);
@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             let captionHtml = vid.caption;
             if (vid.mentioned_user_id) {
-                const mentionedUser = allUsers.find(u => u.id === vid.mentioned_user_id);
+                const mentionedUser = (await DB.getUsersByIds([vid.mentioned_user_id]))[0];
                 if (mentionedUser) {
                     captionHtml += ` <span style="color:var(--primary); font-weight:bold; cursor:pointer;" onclick="window.location.href='profile.html?id=${mentionedUser.id}'">@${mentionedUser.fullname.replace(/\s+/g, '').toLowerCase()}</span>`;
                 }
@@ -345,7 +345,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if(u) {
                     reqList.innerHTML += `
                     <div class="notification" style="align-items:center;">
-                        <img src="${u.profilePic}" onclick="window.location.href='profile.html?id=${u.id}'" style="cursor:pointer;">
+                        <img src="${u.profile_pic || 'https://ui-avatars.com/api/?name='+u.fullname}" onclick="window.location.href='profile.html?id=${u.id}'" style="cursor:pointer;">
                         <div style="flex:1;">
                             <strong onclick="window.location.href='profile.html?id=${u.id}'" style="cursor:pointer; color:var(--text-main);">${u.fullname}</strong>
                             <div style="font-size:0.8rem; color:var(--text-secondary);">wants to follow you</div>
@@ -417,8 +417,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const friendsList = document.getElementById('chat-friends-list');
         // Users we are following OR are following us
-        const allUsers = await DB.getUsers();
-        const chatUsers = allUsers.filter(u => u.id !== currentUser.id && (currentUser.following.includes(u.id) || currentUser.followers.includes(u.id)));
+        const friendIds = [...new Set([...(currentUser.following||[]), ...(currentUser.followers||[])])]; const chatUsers = friendIds.length > 0 ? (await DB.getUsersByIds(friendIds)).filter(u => u.id !== currentUser.id) : [];
+        
 
         if(chatUsers.length === 0) {
             friendsList.innerHTML = '<p style="padding:20px; color:var(--text-secondary);">Follow someone to start chatting!</p>';
@@ -428,7 +428,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 div.className = `chat-user ${activeUserId === u.id ? 'active' : ''}`;
                 div.onclick = () => window.location.href = `chat.html?user=${u.id}`;
                 div.innerHTML = `
-                    <img src="${u.profilePic}">
+                    <img src="${u.profile_pic || 'https://ui-avatars.com/api/?name='+u.fullname}">
                     <div class="chat-user-info">
                         <h4>${u.fullname}</h4>
                         <p>Tap to chat</p>
@@ -574,7 +574,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 mentionResults.style.display = 'block';
                 mentionResults.innerHTML = users.map(u => `
                     <div class="search-user-item" style="display:flex; align-items:center; padding:10px; cursor:pointer; border-bottom:1px solid var(--border);" data-id="${u.id}" data-name="${u.fullname}">
-                        <img src="${u.profile_pic || 'default.png'}" style="width:30px; height:30px; border-radius:50%; margin-right:10px; object-fit:cover;">
+                        <img src="$${u.profile_pic || 'default.png'}" style="width:30px; height:30px; border-radius:50%; margin-right:10px; object-fit:cover;">
                         <span>${u.fullname}</span>
                     </div>
                 `).join('');
@@ -617,7 +617,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (users.length > 0) {
             resultsContainer.innerHTML = users.map(u => `
                 <div class="search-user-item" onclick="window.location.href='profile.html?id=${u.id}'" style="display:flex; align-items:center; padding:10px; cursor:pointer; border-bottom:1px solid var(--border);">
-                    <img src="${u.profile_pic || 'https://ui-avatars.com/api/?name=User'}" style="width:40px; height:40px; border-radius:50%; margin-right:10px; object-fit:cover;">
+                    <img src="$${u.profile_pic || 'https://ui-avatars.com/api/?name=User'}" style="width:40px; height:40px; border-radius:50%; margin-right:10px; object-fit:cover;">
                     <div style="flex:1;">
                         <div style="font-weight:600;">${u.fullname}</div>
                         <div style="font-size:0.8rem; color:var(--text-secondary);">@${u.fullname.replace(/\s+/g, '').toLowerCase()}</div>
@@ -681,7 +681,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }).join('');
                 }
             }
-        });
+        }, 300); });
         
         document.addEventListener('click', (e) => {
             if(!e.target.closest('#notification-btn') && !e.target.closest('#notification-dropdown')) {
@@ -742,7 +742,7 @@ window.openComments = async function(videoId) {
             if(u) {
                 list.innerHTML += `
                 <div class="comment-item">
-                    <img src="${u.profilePic}">
+                    <img src="${u.profile_pic || 'https://ui-avatars.com/api/?name='+u.fullname}">
                     <div class="ci-content">
                         <h4>${u.fullname}</h4>
                         <p>${c.text}</p>

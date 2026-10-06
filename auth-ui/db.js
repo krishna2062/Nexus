@@ -49,28 +49,14 @@ const DB = {
     },
     
     // Users
-    getUsers: async () => {
-        const { data } = await supabaseClient.from('users').select('*');
-        const { data: follows } = await supabaseClient.from('follows').select('*');
-        
-        return data.map(u => {
-            const following = follows.filter(f => f.follower_id === u.id && f.status === 'accepted').map(f => f.target_id);
-            const followers = follows.filter(f => f.target_id === u.id && f.status === 'accepted').map(f => f.follower_id);
-            const pendingFollowers = follows.filter(f => f.target_id === u.id && f.status === 'pending').map(f => f.follower_id);
-            return {
-                id: u.id,
-                fullname: u.fullname,
-                profilePic: u.profile_pic || 'https://ui-avatars.com/api/?name='+u.fullname,
-                bio: u.bio || '',
-                following,
-                followers,
-                pendingFollowers
-            };
-        });
+    getUsersByIds: async (ids) => {
+        if (!ids || ids.length === 0) return [];
+        const { data } = await supabaseClient.from('users').select('*').in('id', ids);
+        return data || [];
     },
     getUser: async (id) => {
-        const users = await DB.getUsers();
-        return users.find(u => u.id === id);
+        const { data } = await supabaseClient.from('users').select('*').eq('id', id).single();
+        return data;
     },
     updateUser: async (id, updates) => {
         const { error } = await supabaseClient.from('users').update(updates).eq('id', id);
@@ -79,25 +65,30 @@ const DB = {
 
     // Videos
     getVideos: async () => {
-        const { data: vids } = await supabaseClient.from('videos').select('*').order('created_at', { ascending: true });
+        const { data: vids } = await supabaseClient.from('videos').select('*').order('created_at', { ascending: false }).limit(20);
         if(!vids) return [];
         
-        const { data: likes } = await supabaseClient.from('likes').select('*');
-        const { data: comments } = await supabaseClient.from('comments').select('*').order('created_at', { ascending: true });
+        const vidIds = vids.map(v => v.id);
+        const userIds = [...new Set(vids.map(v => v.user_id))];
+        const { data: users } = await supabaseClient.from('users').select('*').in('id', userIds);
+        
+        const { data: likes } = await supabaseClient.from('likes').select('*').in('video_id', vidIds);
+        const { data: comments } = await supabaseClient.from('comments').select('*').in('video_id', vidIds).order('created_at', { ascending: true });
         
         return vids.map(v => {
             return {
                 id: v.id,
                 userId: v.user_id,
+                user: users.find(u => u.id === v.user_id),
                 videoUrl: v.video_url,
                 caption: v.caption,
                 timestamp: v.created_at,
-                likes: likes.filter(l => l.video_id === v.id).map(l => l.user_id),
-                comments: comments.filter(c => c.video_id === v.id).map(c => ({
+                likes: likes ? likes.filter(l => l.video_id === v.id).map(l => l.user_id) : [],
+                comments: comments ? comments.filter(c => c.video_id === v.id).map(c => ({
                     id: c.id,
                     userId: c.user_id,
                     text: c.text
-                }))
+                })) : []
             };
         });
     },
@@ -223,11 +214,5 @@ const DB = {
                 callback(payload.new);
             })
             .subscribe();
-    } = await supabaseClient.from('notifications')
-            .select('*, sender:sender_id(fullname, profile_pic)')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false });
-        if (error) throw error;
-        return data || [];
     }
 };
