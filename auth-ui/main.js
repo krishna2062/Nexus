@@ -398,6 +398,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         if(activeUserId) {
+            const chatLayout = document.querySelector('.chat-layout');
+            if (chatLayout) chatLayout.classList.add('chat-active-mobile');
+            
             document.getElementById('no-chat-selected').style.display = 'none';
             document.getElementById('chat-window').style.display = 'flex';
             
